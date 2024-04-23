@@ -12,7 +12,7 @@
 
 ## Supported Zig versions
 
-The ```master``` branch tries to support most recent Zig version from ```master``` branch.
+The ```master``` branch tries to support the most recent [Zig](https://github.com/ziglang/zig) version from ```master``` branch.
 
 
 There are other branches named ```zig-%vesion%``` which has support for different older Zig versions.
