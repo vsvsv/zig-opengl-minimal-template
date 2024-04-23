@@ -5,10 +5,17 @@
 <h4 align="center">Minimalist cross-platform window with OpenGL context in Zig</h4>
 <br>
 
-* Depends only on [GLFW](https://github.com/glfw/glfw) and [glad](https://github.com/Dav1dde/glad).
-* Tested on Zig version ```0.13.0-dev.28+3c5e84073```, may work on newer versions
+* Depends only on [GLFW](https://github.com/glfw/glfw) and [glad](https://github.com/Dav1dde/glad)
+* Tested on Zig version ```0.13.0-dev.35+e8f28cda9``` (see other branches for different Zig versions)
 * Cross-platform compilation for Linux, MacOS and Windows
 * Suitable for following OpenGL tutorials on [LearnOpenGL.com](https://learnopengl.com/Getting-started/Creating-a-window)
+
+## Supported Zig versions
+
+The ```master``` branch tries to support most recent Zig version from ```master``` branch.
+
+
+There are other branches named ```zig-%vesion%``` which has support for different older Zig versions.
 
 ## How To Use
 
