@@ -1,0 +1,21 @@
+# Zig build artifacts
+zig-cache/
+zig-out/
+build/
+build-*/
+docgen_tmp/
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Misc / OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+$RECYCLE.BIN/
