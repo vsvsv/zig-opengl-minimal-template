@@ -37,7 +37,7 @@ fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
     run_step.dependOn(&run_cmd.step);
 }
 
-fn addTests(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode) void {
+fn addTests(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
     const exe_unit_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
@@ -64,15 +64,17 @@ pub fn GladBuilder(comptime glad_path: []const u8) type {
 
         pub fn init(
             b: *std.Build,
-            target: std.zig.CrossTarget,
+            target: std.Build.ResolvedTarget,
             optimize: std.builtin.Mode,
         ) Self {
             const lib = std.Build.Step.Compile.create(b, .{
                 .name = "glad",
                 .kind = .lib,
                 .linkage = .static,
-                .target = target,
-                .optimize = optimize,
+                .root_module = .{
+                    .target = target,
+                    .optimize = optimize,
+                },
             });
 
             const include_path = path ++ "include";
@@ -86,7 +88,7 @@ pub fn GladBuilder(comptime glad_path: []const u8) type {
                 flags.append("-ffast-math") catch unreachable;
             }
 
-            lib.addCSourceFiles(&[_][]const u8{path ++ "src/gl.c"}, flags.slice());
+            lib.addCSourceFiles(.{ .files = &[_][]const u8{path ++ "src/gl.c"}, .flags = flags.slice() });
 
             return Self{
                 .lib = lib,
@@ -111,15 +113,17 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
 
         pub fn init(
             b: *std.Build,
-            target: std.zig.CrossTarget,
+            target: std.Build.ResolvedTarget,
             optimize: std.builtin.Mode,
         ) Self {
             const lib = std.Build.Step.Compile.create(b, .{
                 .name = "glfw",
                 .kind = .lib,
                 .linkage = .static,
-                .target = target,
-                .optimize = optimize,
+                .root_module = .{
+                    .target = target,
+                    .optimize = optimize,
+                },
             });
 
             const include_path = path ++ "include";
@@ -135,11 +139,14 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
 
             const SOURCES = Self.getSources();
 
-            if (target.isDarwin()) {
+            if (target.result.isDarwin()) {
                 lib.defineCMacro("__kernel_ptr_semantics", "");
 
                 flags.append("-D_GLFW_COCOA") catch unreachable;
-                lib.addCSourceFiles(&SOURCES.macos, flags.slice());
+                lib.addCSourceFiles(.{
+                    .files = &SOURCES.macos,
+                    .flags = flags.slice(),
+                });
 
                 lib.linkSystemLibrary("objc");
                 lib.linkFramework("IOKit");
@@ -148,17 +155,23 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
                 lib.linkFramework("CoreGraphics");
                 lib.linkFramework("Foundation");
                 lib.linkFramework("QuartzCore");
-            } else if (target.isWindows()) {
+            } else if (target.result.os.tag == .windows) {
                 flags.append("-D_GLFW_WIN32") catch unreachable;
 
-                lib.addCSourceFiles(&SOURCES.windows, flags.slice());
+                lib.addCSourceFiles(.{
+                    .files = &SOURCES.windows,
+                    .flags = flags.slice(),
+                });
 
                 lib.linkSystemLibrary("gdi32");
                 lib.linkSystemLibrary("user32");
                 lib.linkSystemLibrary("shell32");
             } else { // All others are considered Linux-like
                 flags.append("-D_GLFW_X11") catch unreachable;
-                lib.addCSourceFiles(&SOURCES.linux, flags.slice());
+                lib.addCSourceFiles(.{
+                    .files = &SOURCES.linux,
+                    .flags = flags.slice(),
+                });
                 lib.linkSystemLibrary("X11");
             }
 

@@ -6,16 +6,16 @@
 <br>
 
 > **WARNING**
-> This is a branch that supports Zig version ```0.11.0```. For a template that supports latest Zig version please switch to a ```master``` branch.
+> This is a branch that supports Zig version ```0.12.0```. For a template that supports latest Zig version please switch to a ```master``` branch.
 
 * Depends only on [GLFW](https://github.com/glfw/glfw) and [glad](https://github.com/Dav1dde/glad)
-* Tested on Zig version ```0.11.0``` (see other branches for different Zig versions)
+* Tested on Zig version ```0.12.0``` (see other branches for different Zig versions)
 * Cross-platform compilation for Linux, MacOS and Windows
 * Suitable for following OpenGL tutorials on [LearnOpenGL.com](https://learnopengl.com/Getting-started/Creating-a-window)
 
 ## Supported Zig versions
 
-The ```master``` branch tries to support most recent Zig version from ```master``` branch.
+The ```master``` branch tries to support the most recent [Zig](https://github.com/ziglang/zig) version from ```master``` branch.
 
 
 There are other branches named ```zig-%vesion%``` which has support for different older Zig versions.
@@ -38,7 +38,6 @@ git submodule update --init
 # Build program
 zig build run
 ```
-
 
 ## License
 
