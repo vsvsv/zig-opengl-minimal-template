@@ -105,58 +105,6 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
         }
         break :blk glfw_path ++ "/";
     };
-    const SOURCES = blk: {
-        const sources_common = [_][]const u8{
-            path ++ "src/context.c",
-            path ++ "src/egl_context.c",
-            path ++ "src/init.c",
-            path ++ "src/input.c",
-            path ++ "src/monitor.c",
-            path ++ "src/null_init.c",
-            path ++ "src/null_joystick.c",
-            path ++ "src/null_monitor.c",
-            path ++ "src/null_window.c",
-            path ++ "src/osmesa_context.c",
-            path ++ "src/platform.c",
-            path ++ "src/vulkan.c",
-            path ++ "src/window.c",
-        };
-        const sources_macos = [_][]const u8{
-            path ++ "src/cocoa_time.c",
-            path ++ "src/posix_module.c",
-            path ++ "src/posix_thread.c",
-
-            path ++ "src/cocoa_init.m",
-            path ++ "src/cocoa_joystick.m",
-            path ++ "src/cocoa_monitor.m",
-            path ++ "src/cocoa_window.m",
-            path ++ "src/nsgl_context.m",
-        };
-        const sources_linux = [_][]const u8{
-            path ++ "src/linux_joystick.c",
-            path ++ "src/posix_module.c",
-            path ++ "src/posix_poll.c",
-            path ++ "src/posix_thread.c",
-            path ++ "src/posix_time.c",
-            path ++ "src/xkb_unicode.c",
-        };
-        const sources_windows = [_][]const u8{
-            path ++ "src/wgl_context.c",
-            path ++ "src/win32_init.c",
-            path ++ "src/win32_joystick.c",
-            path ++ "src/win32_module.c",
-            path ++ "src/win32_monitor.c",
-            path ++ "src/win32_thread.c",
-            path ++ "src/win32_time.c",
-            path ++ "src/win32_window.c",
-        };
-
-        break :blk struct {
-            const macos = sources_common ++ sources_macos;
-            const linux = sources_common ++ sources_linux;
-            const windows = sources_common ++ sources_windows;
-        };
-    };
     return struct {
         const Self = @This();
 
@@ -189,6 +137,8 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
                 flags.append("-ffast-math") catch unreachable;
             }
 
+            const SOURCES = Self.getSources();
+
             if (target.result.isDarwin()) {
                 lib.defineCMacro("__kernel_ptr_semantics", "");
 
@@ -217,16 +167,79 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
                 lib.linkSystemLibrary("user32");
                 lib.linkSystemLibrary("shell32");
             } else { // All others are considered Linux-like
+                flags.append("-D_GLFW_X11") catch unreachable;
                 lib.addCSourceFiles(.{
                     .files = &SOURCES.linux,
                     .flags = flags.slice(),
                 });
+                lib.linkSystemLibrary("X11");
             }
 
             return Self{
                 .lib = lib,
                 .include_path = include_path,
             };
+        }
+
+        pub fn getSources() type {
+            const sources = blk: {
+                const sources_common = [_][]const u8{
+                    path ++ "src/context.c",
+                    path ++ "src/egl_context.c",
+                    path ++ "src/init.c",
+                    path ++ "src/input.c",
+                    path ++ "src/monitor.c",
+                    path ++ "src/null_init.c",
+                    path ++ "src/null_joystick.c",
+                    path ++ "src/null_monitor.c",
+                    path ++ "src/null_window.c",
+                    path ++ "src/osmesa_context.c",
+                    path ++ "src/platform.c",
+                    path ++ "src/vulkan.c",
+                    path ++ "src/window.c",
+                };
+                const sources_macos = [_][]const u8{
+                    path ++ "src/cocoa_time.c",
+                    path ++ "src/posix_module.c",
+                    path ++ "src/posix_thread.c",
+
+                    path ++ "src/cocoa_init.m",
+                    path ++ "src/cocoa_joystick.m",
+                    path ++ "src/cocoa_monitor.m",
+                    path ++ "src/cocoa_window.m",
+                    path ++ "src/nsgl_context.m",
+                };
+                const sources_linux = [_][]const u8{
+                    path ++ "src/linux_joystick.c",
+                    path ++ "src/posix_module.c",
+                    path ++ "src/posix_poll.c",
+                    path ++ "src/posix_thread.c",
+                    path ++ "src/posix_time.c",
+                    path ++ "src/xkb_unicode.c",
+                    // X11 headers
+                    path ++ "src/x11_init.c",
+                    path ++ "src/x11_monitor.c",
+                    path ++ "src/x11_window.c",
+                    path ++ "src/glx_context.c",
+                };
+                const sources_windows = [_][]const u8{
+                    path ++ "src/wgl_context.c",
+                    path ++ "src/win32_init.c",
+                    path ++ "src/win32_joystick.c",
+                    path ++ "src/win32_module.c",
+                    path ++ "src/win32_monitor.c",
+                    path ++ "src/win32_thread.c",
+                    path ++ "src/win32_time.c",
+                    path ++ "src/win32_window.c",
+                };
+
+                break :blk struct {
+                    const macos = sources_common ++ sources_macos;
+                    const linux = sources_common ++ sources_linux;
+                    const windows = sources_common ++ sources_windows;
+                };
+            };
+            return sources;
         }
     };
 }
