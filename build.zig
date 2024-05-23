@@ -6,18 +6,18 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "ZigOpenGLExample",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     const glfw = GlfwBuilder("./libs/glfw").init(b, target, optimize);
     exe.defineCMacro("GLFW_INCLUDE_NONE", null);
-    exe.addIncludePath(.{ .path = glfw.include_path });
+    exe.addIncludePath(b.path(glfw.include_path));
     exe.linkLibrary(glfw.lib);
 
     const glad = GladBuilder("./libs/glad").init(b, target, optimize);
-    exe.addIncludePath(.{ .path = glad.include_path });
+    exe.addIncludePath(b.path(glad.include_path));
     exe.linkLibrary(glad.lib);
 
     addRunStep(b, exe);
@@ -39,7 +39,7 @@ fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
 
 fn addTests(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
     const exe_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -78,7 +78,7 @@ pub fn GladBuilder(comptime glad_path: []const u8) type {
             });
 
             const include_path = path ++ "include";
-            lib.addIncludePath(.{ .path = include_path });
+            lib.addIncludePath(b.path(include_path));
             lib.linkLibC();
 
             var flags = std.BoundedArray([]const u8, 128).init(0) catch unreachable;
@@ -127,7 +127,7 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
             });
 
             const include_path = path ++ "include";
-            lib.addIncludePath(.{ .path = include_path });
+            lib.addIncludePath(b.path(include_path));
             lib.linkLibC();
 
             var flags = std.BoundedArray([]const u8, 128).init(0) catch unreachable;
