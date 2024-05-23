@@ -18,18 +18,18 @@ pub fn initWindow(width: u32, height: u32, title: []const u8) !*c.GLFWwindow {
         }
     }.callback);
 
-    const window = c.glfwCreateWindow(@intCast(width), @intCast(height), title.ptr, null, null) orelse {
-        c.glfwTerminate();
-        log.err("Cannot create GLFW window", .{});
-        return error.cannotCreateGlfwWindow;
-    };
-
     // Latest OpenGL version supported on MacOS
     c.glfwWindowHint(c.GLFW_CONTEXT_VERSION_MAJOR, 4);
     c.glfwWindowHint(c.GLFW_CONTEXT_VERSION_MINOR, 1);
 
     c.glfwWindowHint(c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE);
     c.glfwWindowHint(c.GLFW_OPENGL_FORWARD_COMPAT, c.GLFW_TRUE);
+
+    const window = c.glfwCreateWindow(@intCast(width), @intCast(height), title.ptr, null, null) orelse {
+        c.glfwTerminate();
+        log.err("Cannot create GLFW window", .{});
+        return error.cannotCreateGlfwWindow;
+    };
 
     c.glfwMakeContextCurrent(window);
     c.glfwSwapInterval(1);
@@ -41,8 +41,8 @@ pub fn initWindow(width: u32, height: u32, title: []const u8) !*c.GLFWwindow {
 
 pub fn main() !void {
     const window = try initWindow(640, 480, "Zig OpenGL Example");
-    defer c.glfwDestroyWindow(window);
     defer c.glfwTerminate();
+    defer c.glfwDestroyWindow(window);
 
     c.glClearColor(0.0, 0.0, 1.0, 1.0);
 
