@@ -6,13 +6,15 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "ZigOpenGLExample",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const glfw = GlfwBuilder("./libs/glfw").init(b, target, optimize);
-    exe.defineCMacro("GLFW_INCLUDE_NONE", null);
+    exe.root_module.addCMacro("GLFW_INCLUDE_NONE", "1");
     exe.addIncludePath(b.path(glfw.include_path));
     exe.linkLibrary(glfw.lib);
 
@@ -71,10 +73,10 @@ pub fn GladBuilder(comptime glad_path: []const u8) type {
                 .name = "glad",
                 .kind = .lib,
                 .linkage = .static,
-                .root_module = .{
+                .root_module = b.createModule(.{
                     .target = target,
                     .optimize = optimize,
-                },
+                }),
             });
 
             const include_path = path ++ "include";
@@ -120,10 +122,10 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
                 .name = "glfw",
                 .kind = .lib,
                 .linkage = .static,
-                .root_module = .{
+                .root_module = b.createModule(.{
                     .target = target,
                     .optimize = optimize,
-                },
+                }),
             });
 
             const include_path = path ++ "include";
@@ -140,7 +142,7 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
             const SOURCES = Self.getSources();
 
             if (target.result.isDarwin()) {
-                lib.defineCMacro("__kernel_ptr_semantics", "");
+                lib.root_module.addCMacro("__kernel_ptr_semantics", "");
 
                 flags.append("-D_GLFW_COCOA") catch unreachable;
                 lib.addCSourceFiles(.{
