@@ -141,7 +141,7 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
 
             const SOURCES = Self.getSources();
 
-            if (target.result.isDarwin()) {
+            if (target.result.isDarwinLibC()) {
                 lib.root_module.addCMacro("__kernel_ptr_semantics", "");
 
                 flags.append("-D_GLFW_COCOA") catch unreachable;
