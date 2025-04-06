@@ -1,6 +1,7 @@
 .{
-    .name = "zig-gl",
+    .name = .zig_opengl,
     .version = "0.0.0",
+    .fingerprint = 0xddeb166c1998d3f7,
     .dependencies = .{},
     .paths = .{""},
 }
