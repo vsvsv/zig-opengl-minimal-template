@@ -4,26 +4,27 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "ZigOpenGLExample",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
+    const exe_module = b.createModule(.{
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
     });
 
     const glfw = GlfwBuilder("./libs/glfw").init(b, target, optimize);
-    exe.root_module.addCMacro("GLFW_INCLUDE_NONE", "1");
-    exe.addIncludePath(b.path(glfw.include_path));
-    exe.linkLibrary(glfw.lib);
+    exe_module.addCMacro("GLFW_INCLUDE_NONE", "1");
+    exe_module.addIncludePath(b.path(glfw.include_path));
+    exe_module.linkLibrary(glfw.lib);
 
     const glad = GladBuilder("./libs/glad").init(b, target, optimize);
-    exe.addIncludePath(b.path(glad.include_path));
-    exe.linkLibrary(glad.lib);
+    exe_module.addIncludePath(b.path(glad.include_path));
+    exe_module.linkLibrary(glad.lib);
 
+    const exe = b.addExecutable(.{
+        .name = "ZigOpenGLExample",
+        .root_module = exe_module,
+    });
     addRunStep(b, exe);
-    addTests(b, target, optimize);
+    addTests(b, exe);
 }
 
 fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
@@ -39,12 +40,11 @@ fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
     run_step.dependOn(&run_cmd.step);
 }
 
-fn addTests(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
-    const exe_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+fn addTests(
+    b: *std.Build,
+    exe: *std.Build.Step.Compile,
+) void {
+    const exe_unit_tests = b.addTest(.{ .root_module = exe.root_module });
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");
@@ -67,33 +67,33 @@ pub fn GladBuilder(comptime glad_path: []const u8) type {
         pub fn init(
             b: *std.Build,
             target: std.Build.ResolvedTarget,
-            optimize: std.builtin.Mode,
+            optimize: std.builtin.OptimizeMode,
         ) Self {
-            const lib = std.Build.Step.Compile.create(b, .{
-                .name = "glad",
-                .kind = .lib,
-                .linkage = .static,
-                .root_module = b.createModule(.{
-                    .target = target,
-                    .optimize = optimize,
-                }),
+            const lib_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
             });
 
             const include_path = path ++ "include";
-            lib.addIncludePath(b.path(include_path));
-            lib.linkLibC();
+            lib_module.addIncludePath(b.path(include_path));
+            lib_module.link_libc = true;
 
-            var flags = std.BoundedArray([]const u8, 128).init(0) catch unreachable;
+            var flags = std.array_list.Managed([]const u8).init(b.allocator);
             flags.append("-Isrc") catch unreachable;
             if (optimize != .Debug) {
                 flags.append("-Ofast") catch unreachable;
                 flags.append("-ffast-math") catch unreachable;
             }
 
-            lib.addCSourceFiles(.{ .files = &[_][]const u8{path ++ "src/gl.c"}, .flags = flags.slice() });
+            lib_module.addCSourceFiles(.{ .files = &[_][]const u8{path ++ "src/gl.c"}, .flags = flags.items });
 
             return Self{
-                .lib = lib,
+                .lib = std.Build.Step.Compile.create(b, .{
+                    .name = "glad",
+                    .kind = .lib,
+                    .linkage = .static,
+                    .root_module = lib_module,
+                }),
                 .include_path = include_path,
             };
         }
@@ -116,23 +116,18 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
         pub fn init(
             b: *std.Build,
             target: std.Build.ResolvedTarget,
-            optimize: std.builtin.Mode,
+            optimize: std.builtin.OptimizeMode,
         ) Self {
-            const lib = std.Build.Step.Compile.create(b, .{
-                .name = "glfw",
-                .kind = .lib,
-                .linkage = .static,
-                .root_module = b.createModule(.{
-                    .target = target,
-                    .optimize = optimize,
-                }),
+            const lib_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
             });
 
             const include_path = path ++ "include";
-            lib.addIncludePath(b.path(include_path));
-            lib.linkLibC();
+            lib_module.addIncludePath(b.path(include_path));
+            lib_module.link_libc = true;
 
-            var flags = std.BoundedArray([]const u8, 128).init(0) catch unreachable;
+            var flags = std.array_list.Managed([]const u8).init(b.allocator);
             flags.append("-Isrc") catch unreachable;
             if (optimize != .Debug) {
                 flags.append("-Ofast") catch unreachable;
@@ -142,43 +137,48 @@ pub fn GlfwBuilder(comptime glfw_path: []const u8) type {
             const SOURCES = Self.getSources();
 
             if (target.result.isDarwinLibC()) {
-                lib.root_module.addCMacro("__kernel_ptr_semantics", "");
+                lib_module.addCMacro("__kernel_ptr_semantics", "");
 
                 flags.append("-D_GLFW_COCOA") catch unreachable;
-                lib.addCSourceFiles(.{
+                lib_module.addCSourceFiles(.{
                     .files = &SOURCES.macos,
-                    .flags = flags.slice(),
+                    .flags = flags.items,
                 });
 
-                lib.linkSystemLibrary("objc");
-                lib.linkFramework("IOKit");
-                lib.linkFramework("CoreFoundation");
-                lib.linkFramework("AppKit");
-                lib.linkFramework("CoreGraphics");
-                lib.linkFramework("Foundation");
-                lib.linkFramework("QuartzCore");
+                lib_module.linkSystemLibrary("objc", .{});
+                lib_module.linkFramework("IOKit", .{});
+                lib_module.linkFramework("CoreFoundation", .{});
+                lib_module.linkFramework("AppKit", .{});
+                lib_module.linkFramework("CoreGraphics", .{});
+                lib_module.linkFramework("Foundation", .{});
+                lib_module.linkFramework("QuartzCore", .{});
             } else if (target.result.os.tag == .windows) {
                 flags.append("-D_GLFW_WIN32") catch unreachable;
 
-                lib.addCSourceFiles(.{
+                lib_module.addCSourceFiles(.{
                     .files = &SOURCES.windows,
-                    .flags = flags.slice(),
+                    .flags = flags.items,
                 });
 
-                lib.linkSystemLibrary("gdi32");
-                lib.linkSystemLibrary("user32");
-                lib.linkSystemLibrary("shell32");
+                lib_module.linkSystemLibrary("gdi32", .{});
+                lib_module.linkSystemLibrary("user32", .{});
+                lib_module.linkSystemLibrary("shell32", .{});
             } else { // All others are considered Linux-like
                 flags.append("-D_GLFW_X11") catch unreachable;
-                lib.addCSourceFiles(.{
+                lib_module.addCSourceFiles(.{
                     .files = &SOURCES.linux,
-                    .flags = flags.slice(),
+                    .flags = flags.items,
                 });
-                lib.linkSystemLibrary("X11");
+                lib_module.linkSystemLibrary("X11", .{});
             }
 
             return Self{
-                .lib = lib,
+                .lib = std.Build.Step.Compile.create(b, .{
+                    .name = "glfw",
+                    .kind = .lib,
+                    .linkage = .static,
+                    .root_module = lib_module,
+                }),
                 .include_path = include_path,
             };
         }

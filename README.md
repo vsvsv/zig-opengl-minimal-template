@@ -6,7 +6,7 @@
 <br>
 
 * Depends only on [GLFW](https://github.com/glfw/glfw) and [glad](https://github.com/Dav1dde/glad)
-* Tested on Zig version ```0.15.0-dev.247+95fdbc579``` (see other branches for different Zig versions)
+* Tested on Zig version ```0.16.0-dev.1658+c3f2de5e5``` (see other branches for different Zig versions)
 * Cross-platform compilation for Linux, MacOS and Windows
 * Suitable for following OpenGL tutorials on [LearnOpenGL.com](https://learnopengl.com/Getting-started/Creating-a-window)
 

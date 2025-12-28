@@ -13,7 +13,7 @@ pub fn initWindow(width: u32, height: u32, title: []const u8) !*c.GLFWwindow {
     }
 
     _ = c.glfwSetErrorCallback(struct {
-        pub fn callback(error_code: c_int, description: [*c]const u8) callconv(.C) void {
+        pub fn callback(error_code: c_int, description: [*c]const u8) callconv(.c) void {
             std.log.err("GLFW: {}: {s}\n", .{ error_code, description });
         }
     }.callback);
